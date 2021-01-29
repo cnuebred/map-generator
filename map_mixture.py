@@ -1,5 +1,6 @@
 from io import BytesIO
 import subprocess
+import os
 import json
 import sys
 from PIL import Image, ImageDraw
@@ -10,8 +11,10 @@ import math
 config = json.load(open('config.json'))
 
 arr_size_x, arr_size_y = config["arr_size"], config["arr_size"]
-# path_generation = f'{config["path_gen"]}{gen}'
-# path_new_generation = f'{config["path_new_gen"]}{gen}'
+gen = int(config["gen"])
+path_generation = f'{config["path_mixture"]}_{gen}'
+filename = f'pre_{config["filename"]}'
+#path_new_generation = f'{config["path_new_gen"]}{gen}'
 number_files = 1
 
 pattern_types = config['types']
@@ -39,7 +42,7 @@ def save_as_image(arr, path):
         for dy in range(arr_size_y):
             draw.line((dx, dy, dx, dy), fill=getcolor(arr[dy][dx]))
 
-    # return im.save('file.png', 'PNG')
+    im.save(path, 'PNG')
     buffor = BytesIO()
     # replace buffor to 'file.png' if you want convert to image
     im.save(buffor, 'PNG')
@@ -84,7 +87,9 @@ def generate():
                 corner_ += math.ceil(math.pow(hyper_bol, 2))
                 array_[y][:corner_] = ['void']*(corner_)
                 array_[y][-corner_:] = ['void']*(corner_)
-        return save_as_image(array_, None)
+        if not os.path.exists(path_generation):
+            os.makedirs(path_generation)
+        return save_as_image(array_, f'{path_generation}/{filename}_{file}.png')
 
 
 # generate()
