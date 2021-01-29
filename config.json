@@ -1,0 +1,34 @@
+{
+  "basic": 1.5,
+  "arr_size": 32,
+  "path_mixture": "maps_gen/generations",
+  "path_generation": "maps_gen/new_gener",
+  "filename": "map_gen",
+  "quality": 150,
+  "find_round": 10,
+  "move_quality": 100,
+  "number_files": 10,
+  "gen": 13,
+  "get_data_base_by_color": {
+    "#ffffff": "void",
+    "#6abe30": "grass",
+    "#696a6a": "stone",
+    "#494949": "hill",
+    "#74a83c": "jungle",
+    "#57904c": "forest",
+    "#7bc66e": "low_forest"
+  },
+  "get_data_base_by_type": {
+    "void": "#ffffff",
+    "grass": "#6abe30",
+    "stone": "#696a6a",
+    "hill": "#494949",
+    "jungle": "#74a83c",
+    "forest": "#57904c",
+    "low_forest": "#7bc66e"
+  },
+  "probability": [0.25, 0.3, 0.15, 0.05, 0.05, 0.1, 0.1],
+  "types": ["void", "grass", "stone", "hill", "jungle", "forest", "low_forest"],
+  "types_to_group": ["void", "grass", "hill", "jungle", "forest"],
+  "mixture_quality": 100
+}
