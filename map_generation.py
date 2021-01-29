@@ -1,12 +1,10 @@
 import os
 from map_mixture import generate
 import subprocess
-import multitasking
 import sys
 import json
 from PIL import Image, ImageDraw
 import numpy as np
-from numpy.core.fromnumeric import repeat
 
 
 # --

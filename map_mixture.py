@@ -1,5 +1,4 @@
 from io import BytesIO
-import os
 import subprocess
 import json
 import sys
