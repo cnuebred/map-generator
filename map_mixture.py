@@ -1,11 +1,11 @@
-from io import BytesIO
-import subprocess
 import os
 import json
 import sys
-from PIL import Image, ImageDraw
-import numpy as np
 import math
+
+from PIL import Image, ImageDraw
+from io import BytesIO
+import numpy as np
 
 
 config = json.load(open('config.json'))
