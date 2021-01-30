@@ -1,8 +1,10 @@
 import os
-from map_mixture import Generate_Map_Mixture
 import sys
 import json
+# --
 import numpy as np
+# --
+from map_mixture import Generate_Map_Mixture
 
 
 # --
@@ -10,17 +12,15 @@ config = json.load(open('config.json'))
 
 try:
     gen = int(sys.argv[1])  # int(sys.argv[1])
-except:
+except IndexError:
     gen = int(config["gen"])
+
 try:
     number_files = int(sys.argv[2])  # int(sys.argv[1])
-except:
+except IndexError:
     number_files = int(config["number_files"])
 
-path_generation = f'{config["path_mixture"]}_{gen}'
-path_new_generation = f'{config["path_generation"]}_{gen}'
 filename = f'{config["filename"]}'
-
 
 quality = int(config["quality"])
 move_quality = int(config["move_quality"])
@@ -49,28 +49,28 @@ class Generate_Map_Generation(Generate_Map_Mixture):
 
         for file_number in range(0, number_files):
             # im = Image.open(f'{path_generation}/map_generation_r{file}.png')   ## generates from the image
-            pix = self.generate(gen)  # generates from the buffor
-            self.array_ = self.create_pixel_map(pix)
+            self.generate(file_number)  # generates from the buffor
+            self.create_pixel_map()
             for x in progressbar(range(quality), f"Quality progress - image {file_number}: ", 40):
                 for y in range(self.arr_size_y):
                     for idx, x in enumerate(self.array_[y]):
                         self.find_value_grid(idx, y, self.array_, x)
 
-            if not os.path.exists(path_new_generation):
-                os.makedirs(path_new_generation)
+            if not os.path.exists(self.path_new_generation):
+                os.makedirs(self.path_new_generation)
             self.save_as_image(
-                self.array_, f'{path_new_generation}/{filename}_{file_number}.png', to_png=True, finnal=True)
+                self.array_, f'{self.path_new_generation}/{filename}_{file_number}.png', to_png=True, finnal=True)
 
-    def create_pixel_map(self, pix):
+    def create_pixel_map(self):
         for y in range(self.arr_size_y):
             for x in range(self.arr_size_x):
-                self.array_[y][x] = self.get_value_by_color(pix[x, y])
+                self.array_[y][x] = self.getvalue(self.pix_map[x, y])
 
-    def replace_on_grid(arr2D, po_y, po_x, tg_y, tg_x):
-        value_po = arr2D[po_y][po_x]
-        value_tg = arr2D[tg_y][tg_x]
-        arr2D[po_y][po_x] = value_tg
-        arr2D[tg_y][tg_x] = value_po
+    def replace_on_grid(self, po_y, po_x, tg_y, tg_x):
+        value_po = self.arr2D[po_y][po_x]
+        value_tg = self.arr2D[tg_y][tg_x]
+        self.arr2D[po_y][po_x] = value_tg
+        self.arr2D[tg_y][tg_x] = value_po
 
     def check_corner(self, corner, points=False, distance=1, random=False):
         if random:
@@ -93,7 +93,6 @@ class Generate_Map_Generation(Generate_Map_Mixture):
             value = False
         return value
 
-    @property
     def corners_condition(self, material) -> bool:
         return (self.check_corner('.l') == material or
                 self.check_corner('.r') == material) and (self.check_corner('d.') == material or
@@ -126,7 +125,7 @@ class Generate_Map_Generation(Generate_Map_Mixture):
 
                             if check_number.get('vector') != 0:
                                 pos = check_number.get('vector')
-                                self.replace_on_grid(arr2D, point_y, point_x,
+                                self.replace_on_grid(point_y, point_x,
                                                      pos.get('y'), pos.get('x'))
 
                         connections_edge = []
@@ -143,8 +142,11 @@ class Generate_Map_Generation(Generate_Map_Mixture):
 
                             if check_number.get('vector') != 0:
                                 pos = check_number.get('vector')
-                                self.replace_on_grid(arr2D, point_y, point_x,
+                                self.replace_on_grid(point_y, point_x,
                                                      pos.get('y'), pos.get('x'))
                         else:
                             pass
                 break
+
+
+new_map = Generate_Map_Generation()

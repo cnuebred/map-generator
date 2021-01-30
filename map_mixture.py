@@ -10,12 +10,8 @@ import numpy as np
 
 config = json.load(open('config.json'))
 gen = int(config["gen"])
-path_generation = f'{config["path_mixture"]}_{gen}'
-filename = f'pre_{config["filename"]}'
 pattern_types = config['types']
 pattern_probability = config['probability']
-quality = int(config['mixture_quality'])
-
 # ==
 get_data_base_by_type = config["get_data_base_by_type"]
 get_data_base_by_color = config["get_data_base_by_color"]
@@ -29,7 +25,7 @@ class Generate_Map_Mixture:
         self.arr_size_x, self.arr_size_y = config["arr_size"], config["arr_size"]
         self.array_ = np.full(
             (self.arr_size_x, self.arr_size_y), "...............")
-        self.pix_map
+        self.pix_map = None
 
         self.corner = int(config['arr_size']/3.3)
         self.corner_ = self.corner
@@ -38,6 +34,10 @@ class Generate_Map_Mixture:
             math.log(config['arr_size'], 2) - 1
         self.hyper_bol = -2.1
         self.power = -0.03
+
+        self.path_generation = f'{config["path_mixture"]}_{gen}'
+        self.path_new_generation = f'{config["path_generation"]}_{gen}'
+        self.filename = f'{config["filename"]}'
 
     def getcolor(self, c):
         return get_data_base_by_type.get(c, '#ffffff')
@@ -56,7 +56,8 @@ class Generate_Map_Mixture:
 
         if options.get('to_png'):
             im.save(path, 'PNG')
-
+            if options.get('finnal'):
+                return
         buffor = BytesIO()
         # replace buffor to 'file.png' if you want convert to image
         im.save(buffor, 'PNG')
@@ -79,10 +80,6 @@ class Generate_Map_Mixture:
                 self.corner_ += math.ceil(math.pow(self.hyper_bol, 2))
                 self.array_[y][:self.corner_] = ['void']*(self.corner_)
                 self.array_[y][-self.corner_:] = ['void']*(self.corner_)
-        if not os.path.exists(path_generation):
-            os.makedirs(path_generation)
-        return self.save_as_image(self.array_, f'{path_generation}/{filename}_{file}.png', to_png=True)
-
-
-map = Generate_Map_Mixture()
-map.generate(1)
+        if not os.path.exists(self.path_generation):
+            os.makedirs(self.path_generation)
+        return self.save_as_image(self.array_, f'{self.path_generation}/pre_{self.filename}_{file}.png', to_png=True)
