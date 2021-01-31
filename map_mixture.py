@@ -1,85 +1,75 @@
-import os
 import json
-import sys
 import math
-
-from PIL import Image, ImageDraw
+import os
+import sys
 from io import BytesIO
+
 import numpy as np
+from PIL import Image, ImageDraw
+
+import settings as st
 
 
-config = json.load(open('config.json'))
-gen = int(config["gen"])
-pattern_types = config['types']
-pattern_probability = config['probability']
-# ==
-get_data_base_by_type = config["get_data_base_by_type"]
-get_data_base_by_color = config["get_data_base_by_color"]
-# ==
-
-print(sys.argv[0])
-
-
-class Generate_Map_Mixture:
-    def __init__(self):
-        self.arr_size_x, self.arr_size_y = config["arr_size"], config["arr_size"]
-        self.array_ = np.full(
-            (self.arr_size_x, self.arr_size_y), "...............")
+class GenerateMapMixture:
+    def __init__(self) -> None:
+        self.arr_size_x, self.arr_size_y = st.arr_size, st.arr_size
+        self.array_ = np.full((self.arr_size_x, self.arr_size_y), "void", dtype="U15")
         self.pix_map = None
 
-        self.corner = int(config['arr_size']/3.3)
-        self.corner_ = self.corner
-        self.up_corner_limit = - \
-            math.log(config['arr_size'], 2) - \
-            math.log(config['arr_size'], 2) - 1
-        self.hyper_bol = -2.1
-        self.power = -0.03
+    def get_data_color(self, value) -> str:
+        return st.data_color_value.get(value, "#ffffff")
 
-        self.path_generation = f'{config["path_mixture"]}_{gen}'
-        self.path_new_generation = f'{config["path_generation"]}_{gen}'
-        self.filename = f'{config["filename"]}'
+    def get_data_value(self, color) -> str:
+        target = "#{:02x}{:02x}{:02x}".format(color[0], color[1], color[2])
+        return st.data_color_value.get(target, None)
 
-    def getcolor(self, c):
-        return get_data_base_by_type.get(c, '#ffffff')
-
-    def getvalue(self, arg):
-        target = '#{:02x}{:02x}{:02x}'.format(arg[0], arg[1], arg[2])
-        return get_data_base_by_color.get(target, None)
-
-    def save_as_image(self, arr, path, **options):
-        im = Image.new(
-            'RGBA', (self.arr_size_x, self.arr_size_y), (20, 255, 0, 0))
-        draw = ImageDraw.Draw(im)
+    def save_as_image(self, arr, path, **options) -> None:
+        image = Image.new("RGBA", (self.arr_size_x, self.arr_size_y), (20, 255, 0, 0))
+        draw = ImageDraw.Draw(image)
         for dx in range(self.arr_size_x):
             for dy in range(self.arr_size_y):
-                draw.line((dx, dy, dx, dy), fill=self.getcolor(arr[dy][dx]))
+                draw.line((dx, dy, dx, dy), fill=self.get_data_color(arr[dy][dx]))
 
-        if options.get('to_png'):
-            im.save(path, 'PNG')
-            if options.get('finnal'):
-                return
+        if options.get("to_png"):
+            image.save(path, "PNG")
+
+        if options.get("end"):
+            return
+
         buffor = BytesIO()
-        # replace buffor to 'file.png' if you want convert to image
-        im.save(buffor, 'PNG')
+        image.save(buffor, "PNG")
         buffor.seek(0)
+        image_buffor = Image.open(buffor)
+        self.pix_map = image_buffor.load()
 
-        img_buf = Image.open(buffor)
-        self.pix_map = img_buf.load()
+    def generate_mixture(self, file=0) -> None:
+        corner_ = st.corner
+        hyper_bol = st.hyper_bol
 
-    def generate(self, file):
         for y in range(self.arr_size_y):
             self.array_[y] = np.random.choice(
-                pattern_types, self.arr_size_y, p=pattern_probability)
-            if y < self.corner and self.corner_ > 0:
-                self.array_[y][:self.corner_] = ['void']*(self.corner_)
-                self.array_[y][-self.corner_:] = ['void']*(self.corner_)
-                self.hyper_bol -= self.power
-                self.corner_ -= math.ceil(math.pow(self.hyper_bol, 2))
-            if y > (self.arr_size_x - self.up_corner_limit - self.corner) and self.corner_ <= self.corner:
-                self.hyper_bol += -self.power
-                self.corner_ += math.ceil(math.pow(self.hyper_bol, 2))
-                self.array_[y][:self.corner_] = ['void']*(self.corner_)
-                self.array_[y][-self.corner_:] = ['void']*(self.corner_)
-        if not os.path.exists(self.path_generation):
-            os.makedirs(self.path_generation)
-        return self.save_as_image(self.array_, f'{self.path_generation}/pre_{self.filename}_{file}.png', to_png=True)
+                st.pattern_types, self.arr_size_y, p=st.probability
+            )
+            if y < st.corner and corner_ > 0:
+                self.array_[y][:corner_] = ["void"] * (corner_)
+                self.array_[y][-corner_:] = ["void"] * (corner_)
+                hyper_bol -= st.power
+                corner_ -= math.ceil(math.pow(hyper_bol, 2))
+            if (
+                y > (self.arr_size_x - st.up_corner_limit - st.corner)
+                and corner_ <= st.corner
+            ):
+                hyper_bol += -st.power
+                corner_ += math.ceil(math.pow(hyper_bol, 2))
+                self.array_[y][:corner_] = ["void"] * (corner_)
+                self.array_[y][-corner_:] = ["void"] * (corner_)
+
+        if not os.path.exists(st.path_mixture):
+            os.makedirs(st.path_mixture)
+        if not os.path.exists(st.path_generation):
+            os.makedirs(st.path_generation)
+
+        return self.save_as_image(
+            self.array_, f"{st.path_mixture}/pre_{st.filename}_{file}.png", to_png=True,
+        )
+
