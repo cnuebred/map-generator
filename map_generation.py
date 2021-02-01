@@ -8,14 +8,20 @@ import settings as st
 from map_mixture import GenerateMapMixture
 
 try:
-    gen = int(sys.argv[1])
+    st.generation_number = int(sys.argv[1])
 except IndexError:
-    gen = st.gen
+    print(
+        """Index Error
+            generation number - settings generation_number"""
+    )
 
 try:
-    number_files = int(sys.argv[2])
+    st.number_files = int(sys.argv[2])
 except IndexError:
-    number_files = st.number_files
+    print(
+        """Index Error
+            number of files"""
+    )
 
 
 def progressbar(it, prefix="", size=60, file=sys.stdout):
@@ -39,16 +45,17 @@ class Generate_Map_Generation(GenerateMapMixture):
         super().__init__()
 
     def run(self):
-        for file_number in range(0, number_files):
+        for file_number in range(0, st.number_files):
             # image = Image.open(f'{path_generation}/map_generation_r{file}.png')   ## generates from the image
-            self.generate_mixture(file_number)  # generates from the buffor
+            self.generate_mixture(file_number)
+            # generates from the buffor
             self.create_pixel_map()
             for x in progressbar(
                 range(st.quality), f"Quality progress - image {file_number}: ", 40
             ):
                 for y in range(self.arr_size_y):
-                    for index, x in enumerate(self.array_[y]):
-                        self.find_value_grid(index, y, self.array_, x)
+                    for x in range(self.arr_size_x):
+                        self.find_value_grid(x, y, self.array_)
 
             if not os.path.exists(st.path_generation):
                 os.makedirs(st.path_generation)
@@ -57,7 +64,7 @@ class Generate_Map_Generation(GenerateMapMixture):
                 self.array_,
                 f"{st.path_generation}/{st.filename}_{file_number}.png",
                 to_png=True,
-                end=True,
+                is_end=True,
             )
 
     def create_pixel_map(self) -> None:
@@ -71,75 +78,87 @@ class Generate_Map_Generation(GenerateMapMixture):
         self.arr2D[po_y][po_x] = value_target
 
     def check_corner(self, corner, points=False, distance=1) -> dict:
-        ud = distance if corner[0] == "u" else -distance
-        rl = distance if corner[1] == "r" else -distance
+
+        top_or_bottom = distance if corner[0] == "t" else -distance
+        right_or_left = distance if corner[1] == "r" else -distance
+
         if corner[0] == ".":
-            ud = 0
+            top_or_bottom = 0
         if corner[1] == ".":
-            rl = 0
+            right_or_left = 0
 
-        if points:
-            return {"y": self.point_y + ud, "x": self.point_x + rl}
+        corner_dict = {}
         try:
-            value = self.arr2D[self.point_y + ud][self.point_x + rl]
-        except:
-            value = False
-        return {"value": value}
+            value = self.arr2D[self.point_y + top_or_bottom][
+                self.point_x + right_or_left
+            ]
+            corner_dict.update({"value": value})
 
-    def corners_condition(self, material) -> bool:
+        except IndexError:
+            return {"value": None}
+        if points:
+            corner_dict.update(
+                {
+                    "cordinate": {
+                        "y": self.point_y + top_or_bottom,
+                        "x": self.point_x + right_or_left,
+                    }
+                }
+            )
+        return corner_dict
+
+    def check_two_edges(self, material) -> bool:
+        """Check if point have a minimum two similar values over the edge"""
         return (
             self.check_corner(".l").get("value") == material
             or self.check_corner(".r").get("value") == material
         ) and (
-            self.check_corner("d.").get("value") == material
-            or self.check_corner("u.").get("value") == material
+            self.check_corner("b.").get("value") == material
+            or self.check_corner("t.").get("value") == material
         )
 
     def find_value_grid(self, point_x, point_y, arr2D):
         self.arr2D = arr2D
         self.point_x = point_x
         self.point_y = point_y
-
         for material in st.types_to_group:
             if self.check_corner("..").get("value") != material:
                 break
+            if self.check_two_edges(material):
+                continue
 
             check_number = {"repeat": 0, "vector": 0}
-            if self.corners_condition(material):
-                continue
-            else:
-                for el in range(st.move_quality):
-                    check_number["vector"] = 0
-                    for corner_vector in [
-                        "ul",
-                        "ur",
-                        "dl",
-                        "dr",
-                        "u.",
-                        ".r",
-                        "d.",
-                        ".l",
-                    ]:
-                        if self.check_corner(corner_vector).get("value") == material:
-                            continue
 
-                        for it in range(2, st.find_round):
-                            if (
-                                self.check_corner(corner_vector, distance=it).get(
-                                    "value"
-                                )
-                                == material
-                            ):
-                                check_number["vector"] = self.check_corner(
-                                    corner_vector, distance=it - 1, points=True
-                                )
-                                break
+            for el in range(st.move_quality):
+                check_number["vector"] = 0
+                for corner_vector in [
+                    "tl",  # top-left
+                    "tr",  # top-right
+                    "bl",  # bottom-left
+                    "br",  # bottom-right
+                    "t.",  # top
+                    ".r",  # right
+                    "b.",  # bottom
+                    ".l",  # left
+                ]:
+                    if self.check_corner(corner_vector).get("value") == material:
+                        continue
 
-                        if check_number.get("vector") != 0:
-                            pos = check_number.get("vector")
-                            self.replace_on_grid(
-                                point_y, point_x, pos.get("y"), pos.get("x")
-                            )
+                    for it in range(2, st.find_round):
+                        if (
+                            self.check_corner(corner_vector, distance=it).get("value")
+                            == material
+                        ):
+                            check_number["vector"] = self.check_corner(
+                                corner_vector, points=True, distance=it - 1
+                            ).get("cordinate")
+                            break
+
+                    if check_number.get("vector") != 0:
+                        pos = check_number.get("vector")
+                        self.replace_on_grid(
+                            point_y, point_x, pos.get("y"), pos.get("x")
+                        )
 
 
 new_map = Generate_Map_Generation().run()
