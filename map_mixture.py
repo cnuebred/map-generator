@@ -1,7 +1,5 @@
-import json
 import math
 import os
-import sys
 from io import BytesIO
 
 import numpy as np
@@ -10,29 +8,38 @@ from PIL import Image, ImageDraw
 import settings as st
 
 
-class GenerateMapMixture:
+def get_data_color(value) -> str:
+    return st.DATA_COLOR_VALUE.get(value, "#ffffff")
+
+
+class MapMixtureGenerator:
     def __init__(self) -> None:
-        self.arr_size_x, self.arr_size_y = st.arr_size, st.arr_size
+        self.arr_size_x, self.arr_size_y = st.ARR_SIZE, st.ARR_SIZE
         self.array_ = np.full((self.arr_size_x, self.arr_size_y), "void", dtype="U15")
         self.pix_map = None
+        self.corner_scale = st.CORNER
+        self.hyperbole = st.HYPERBOLE
 
-    def get_data_color(self, value) -> str:
-        return st.data_color_value.get(value, "#ffffff")
-
-    def get_data_value(self, color) -> str:
-        color_dict = {v: k for k, v in st.data_color_value.items()}
-        target = "#{:02x}{:02x}{:02x}".format(color[0], color[1], color[2])
-        return color_dict.get(target, None)
-
-    def save_as_image(self, arr, path, **options) -> None:
-        image = Image.new("RGBA", (self.arr_size_x, self.arr_size_y), (20, 255, 0, 0))
-        draw = ImageDraw.Draw(image)
+    def _draw_on_image(self, arr):
         for canvas_x in range(self.arr_size_x):
             for canvas_y in range(self.arr_size_y):
-                draw.line(
+                self.draw.line(
                     (canvas_x, canvas_y, canvas_x, canvas_y),
-                    fill=self.get_data_color(arr[canvas_y][canvas_x]),
+                    fill=get_data_color(arr[canvas_y][canvas_x]),
                 )
+
+    def _generate_buffor(self, image):
+        buffor = BytesIO()
+        image.save(buffor, "PNG")
+        buffor.seek(0)
+        image_buffor = Image.open(buffor)
+        self.pix_map = image_buffor.load()
+
+    def process_image(self, arr, path, **options) -> None:
+        image = Image.new("RGBA", (self.arr_size_x, self.arr_size_y), (20, 255, 0, 0))
+        self.draw = ImageDraw.Draw(image)
+
+        self._draw_on_image(arr)
 
         if options.get("to_png"):
             image.save(path, "PNG")
@@ -40,40 +47,39 @@ class GenerateMapMixture:
         if options.get("is_end"):
             return
 
-        buffor = BytesIO()
-        image.save(buffor, "PNG")
-        buffor.seek(0)
-        image_buffor = Image.open(buffor)
-        self.pix_map = image_buffor.load()
+        self._generate_buffor(image)
 
     def generate_mixture(self, file=0) -> None:
-        corner_editable = st.corner
-        hyperbole = st.hyperbole
 
         for y in range(self.arr_size_y):
             self.array_[y] = np.random.choice(
-                st.pattern_types, self.arr_size_y, p=st.probability
+                st.PATTERN_TYPES, self.arr_size_y, p=st.PROBABILITY
             )
-            if y < st.corner and corner_editable > 0:
-                self.array_[y][:corner_editable] = ["void"] * (corner_editable)
-                self.array_[y][-corner_editable:] = ["void"] * (corner_editable)
-                hyperbole -= st.power
-                corner_editable -= math.ceil(math.pow(hyperbole, 2))
+
+            def replace_pixels():
+                self.array_[y][: self.corner_scale] = ["void"] * self.corner_scale
+                self.array_[y][-self.corner_scale :] = ["void"] * self.corner_scale
+
+            def calculate_corners_variables(operator=1) -> None:
+                self.hyperbole += st.POWER
+                self.corner_scale += math.ceil(self.hyperbole ** 2) * operator
+
+            if y < st.CORNER and self.corner_scale > 0:
+                replace_pixels()
+                calculate_corners_variables(-1)
             if (
-                y > (self.arr_size_x - st.up_corner_limit - st.corner)
-                and corner_editable <= st.corner
+                y > (self.arr_size_x - st.UP_CORNER_LIMIT - st.CORNER)
+                and self.corner_scale <= st.CORNER
             ):
-                hyperbole += -st.power
-                corner_editable += math.ceil(math.pow(hyperbole, 2))
-                self.array_[y][:corner_editable] = ["void"] * (corner_editable)
-                self.array_[y][-corner_editable:] = ["void"] * (corner_editable)
+                calculate_corners_variables()
+                replace_pixels()
 
-        if not os.path.exists(st.path_mixture):
-            os.makedirs(st.path_mixture)
-        if not os.path.exists(st.path_generation):
-            os.makedirs(st.path_generation)
+        if not os.path.exists(st.PATH_MIXTURE):
+            os.makedirs(st.PATH_MIXTURE)
 
-        return self.save_as_image(
-            self.array_, f"{st.path_mixture}/pre_{st.filename}_{file}.png", to_png=True,
+        if not os.path.exists(st.PATH_GENERATION):
+            os.makedirs(st.PATH_GENERATION)
+
+        return self.process_image(
+            self.array_, f"{st.PATH_MIXTURE}/pre_{st.FILENAME}_{file}.png", to_png=True,
         )
-

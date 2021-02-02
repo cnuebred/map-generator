@@ -1,20 +1,20 @@
 import math
 
 # canvas settigns
-arr_size = 32
-generation_number = 0
-path_mixture = f"maps_gen/generations_{generation_number}"
-path_generation = f"maps_gen/new_gener_{generation_number}"
-filename = "map_gen"
-number_files = 1
+ARR_SIZE = 32
+GENERATION_NUMBER = 0
+PATH_MIXTURE = f"maps_gen/generations_{GENERATION_NUMBER}"
+PATH_GENERATION = f"maps_gen/new_gener_{GENERATION_NUMBER}"
+FILENAME = "map_gen"
+NUMBER_FILES = 1
 
 # render settings
-quality = 350
-find_round = 20
-move_quality = 40
+QUALITY = 100
+FIND_AROUND_RANGE = 4
+MOVE_QUALITY = 20
 
 # colors and types settings
-data_color_value = {
+DATA_COLOR_VALUE = {
     "void": "#ffffff",
     "grass": "#6abe30",
     "stone": "#696a6a",
@@ -23,14 +23,24 @@ data_color_value = {
     "forest": "#57904c",
     "low_forest": "#7bc66e",
 }
-probability = [0.35, 0.4, 0.05, 0.05, 0.05, 0.05, 0.05]
-pattern_types = ["void", "grass", "stone", "hill", "jungle", "forest", "low_forest"]
-types_to_group = ["void", "grass", "hill", "jungle", "forest"]
-mixture_quality = 100
+PROBABILITY = [0.35, 0.4, 0.05, 0.05, 0.05, 0.05, 0.05]
+PATTERN_TYPES = ["void", "grass", "stone", "hill", "jungle", "forest", "low_forest"]
+TYPES_TO_GROUP = ["void", "grass", "hill", "jungle", "forest"]
+MIXTURE_QUALITY = 100
+CORNER_TYPES = [
+    "tl",  # top-left
+    "tr",  # top-right
+    "bl",  # bottom-left
+    "br",  # bottom-right
+    "t.",  # top
+    ".r",  # right
+    "b.",  # bottom
+    ".l",  # left
+]
+
 
 # corners settings on mixture map
-corner = math.ceil(arr_size / 3.3)
-corner_ = corner
-up_corner_limit = math.ceil(-(math.log(arr_size, 2) * 2) - 1)
-hyperbole = -2.1
-power = -0.03
+CORNER = math.ceil(ARR_SIZE / 3.3)
+UP_CORNER_LIMIT = math.ceil(-(math.log(ARR_SIZE, 2) * 2) - 1)
+HYPERBOLE = -2.2
+POWER = -0.03
