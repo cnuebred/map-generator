@@ -1,5 +1,6 @@
 import math
 import os
+import pathlib
 from io import BytesIO
 
 import numpy as np
@@ -74,11 +75,9 @@ class MapMixtureGenerator:
                 calculate_corners_variables()
                 replace_pixels()
 
-        if not os.path.exists(st.PATH_MIXTURE):
-            os.makedirs(st.PATH_MIXTURE)
+        pathlib.Path(st.PATH_MIXTURE).mkdir(parents=True, exist_ok=True)
 
-        if not os.path.exists(st.PATH_GENERATION):
-            os.makedirs(st.PATH_GENERATION)
+        pathlib.Path(st.PATH_GENERATION).mkdir(parents=True, exist_ok=True)
 
         return self.process_image(
             self.array_, f"{st.PATH_MIXTURE}/pre_{st.FILENAME}_{file}.png", to_png=True,
