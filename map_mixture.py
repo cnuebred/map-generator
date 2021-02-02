@@ -1,5 +1,4 @@
 import math
-import os
 import pathlib
 from io import BytesIO
 
