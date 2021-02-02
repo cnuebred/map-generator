@@ -5,20 +5,20 @@ from io import BytesIO
 import numpy as np
 from PIL import Image, ImageDraw
 
-import settings as st
+import settings
 
 
 def get_data_color(value) -> str:
-    return st.DATA_COLOR_VALUE.get(value, "#ffffff")
+    return settings.DATA_COLOR_VALUE.get(value, settings.DEFAULT_COLOR)
 
 
 class MapMixtureGenerator:
     def __init__(self) -> None:
-        self.arr_size_x, self.arr_size_y = st.ARR_SIZE, st.ARR_SIZE
+        self.arr_size_x, self.arr_size_y = settings.ARR_SIZE, settings.ARR_SIZE
         self.array_ = np.full((self.arr_size_x, self.arr_size_y), "void", dtype="U15")
+        self.corner_scale = settings.CORNER
+        self.hyperbole = settings.HYPERBOLE
         self.pix_map = None
-        self.corner_scale = st.CORNER
-        self.hyperbole = st.HYPERBOLE
 
     def _draw_on_image(self, arr):
         for canvas_x in range(self.arr_size_x):
@@ -53,7 +53,7 @@ class MapMixtureGenerator:
 
         for y in range(self.arr_size_y):
             self.array_[y] = np.random.choice(
-                st.PATTERN_TYPES, self.arr_size_y, p=st.PROBABILITY
+                settings.PATTERN_TYPES, self.arr_size_y, p=settings.PROBABILITY
             )
 
             def replace_pixels():
@@ -61,23 +61,25 @@ class MapMixtureGenerator:
                 self.array_[y][-self.corner_scale :] = ["void"] * self.corner_scale
 
             def calculate_corners_variables(operator=1) -> None:
-                self.hyperbole += st.POWER
+                self.hyperbole += settings.POWER
                 self.corner_scale += math.ceil(self.hyperbole ** 2) * operator
 
-            if y < st.CORNER and self.corner_scale > 0:
+            if y < settings.CORNER and self.corner_scale > 0:
                 replace_pixels()
                 calculate_corners_variables(-1)
             if (
-                y > (self.arr_size_x - st.UP_CORNER_LIMIT - st.CORNER)
-                and self.corner_scale <= st.CORNER
+                y > (self.arr_size_x - settings.UP_CORNER_LIMIT - settings.CORNER)
+                and self.corner_scale <= settings.CORNER
             ):
                 calculate_corners_variables()
                 replace_pixels()
 
-        pathlib.Path(st.PATH_MIXTURE).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(settings.PATH_MIXTURE).mkdir(parents=True, exist_ok=True)
 
-        pathlib.Path(st.PATH_GENERATION).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(settings.PATH_GENERATION).mkdir(parents=True, exist_ok=True)
 
         return self.process_image(
-            self.array_, f"{st.PATH_MIXTURE}/pre_{st.FILENAME}_{file}.png", to_png=True,
+            self.array_,
+            f"{settings.PATH_MIXTURE}/pre_{settings.FILENAME}_{file}.png",
+            to_png=True,
         )

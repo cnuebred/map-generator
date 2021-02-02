@@ -1,7 +1,8 @@
 import os
 import sys
+from typing import Dict
 
-import settings as st
+import settings as settings
 from map_mixture import MapMixtureGenerator
 
 
@@ -25,7 +26,7 @@ def progressbar(iterator, prefix="", size=60, file=sys.stdout):
 
 
 def get_data_value(color) -> str:
-    color_dict = {v: k for k, v in st.DATA_COLOR_VALUE.items()}
+    color_dict = {v: k for k, v in settings.DATA_COLOR_VALUE.items()}
     target = "#{:02x}{:02x}{:02x}".format(color[0], color[1], color[2])
 
     return color_dict.get(target, None)
@@ -39,23 +40,23 @@ class MapGenerator(MapMixtureGenerator):
         self.point_y = None
 
     def run(self):
-        for file_number in range(0, st.NUMBER_FILES):
+        for file_number in range(0, settings.NUMBER_FILES):
             self.generate_mixture(file_number)
             self.create_pixel_map()
 
             for index in progressbar(
-                range(st.QUALITY), f"Quality progress - image {file_number}: ", 40
+                range(settings.QUALITY), f"Quality progress - image {file_number}: ", 40
             ):
                 for y in range(self.arr_size_y):
                     for x in range(self.arr_size_x):
                         self.find_grid_value(x, y, self.array_)
 
-            if not os.path.exists(st.PATH_GENERATION):
-                os.makedirs(st.PATH_GENERATION)
+            if not os.path.exists(settings.PATH_GENERATION):
+                os.makedirs(settings.PATH_GENERATION)
 
             self.process_image(
                 self.array_,
-                f"{st.PATH_GENERATION}/{st.FILENAME}_{file_number}.png",
+                f"{settings.PATH_GENERATION}/{settings.FILENAME}_{file_number}.png",
                 to_png=True,
                 is_end=True,
             )
@@ -71,7 +72,7 @@ class MapGenerator(MapMixtureGenerator):
         self.arr2D[tg_y][tg_x] = self.arr2D[po_y][po_x]
         self.arr2D[po_y][po_x] = value_target
 
-    def get_corner(self, corner, points=False, distance=1) -> dict:
+    def get_corner(self, corner, points=False, distance=1) -> Dict[str, str]:
         top_or_bottom = distance if corner[0] == "t" else -distance
         right_or_left = distance if corner[1] == "r" else -distance
 
@@ -102,7 +103,7 @@ class MapGenerator(MapMixtureGenerator):
         return corner_dict
 
     def check_two_edges(self, material) -> bool:
-        """Check if point have a minimum two similar values over the edge"""
+        """Check minimum two similar values over the edge"""
 
         return (
             self.get_corner(".l").get("value") == material
@@ -117,23 +118,22 @@ class MapGenerator(MapMixtureGenerator):
         self.point_x = point_x
         self.point_y = point_y
 
-        for material in st.TYPES_TO_GROUP:
-            if self.get_corner("..").get("value") != material:
-                continue
-
-            if self.check_two_edges(material):
+        for material in settings.TYPES_TO_GROUP:
+            if self.get_corner("..").get("value") != material or self.check_two_edges(
+                material
+            ):
                 continue
 
             check_number = {"repeat": 0, "vector": 0}
 
-            for quality_rang in range(st.MOVE_QUALITY):
+            for quality_rang in range(settings.MOVE_QUALITY):
                 check_number["vector"] = 0
 
-                for corner_vector in st.CORNER_TYPES:
+                for corner_vector in settings.CORNER_TYPES:
                     if self.get_corner(corner_vector).get("value") == material:
                         continue
 
-                    for it in range(2, st.FIND_AROUND_RANGE):
+                    for it in range(2, settings.FIND_AROUND_RANGE):
                         if (
                             self.get_corner(corner_vector, distance=it).get("value")
                             == material
@@ -152,12 +152,12 @@ class MapGenerator(MapMixtureGenerator):
 
 if __name__ == "__main__":
     try:
-        st.GENERATION_NUMBER = int(sys.argv[1])
+        settings.GENERATION_NUMBER = int(sys.argv[1])
     except IndexError:
         print("Index Error generation number - settings generation_number")
 
     try:
-        st.NUMBER_FILES = int(sys.argv[2])
+        settings.NUMBER_FILES = int(sys.argv[2])
     except IndexError:
         print("Index Error number of files")
 

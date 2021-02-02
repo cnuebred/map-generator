@@ -23,6 +23,7 @@ DATA_COLOR_VALUE = {
     "forest": "#57904c",
     "low_forest": "#7bc66e",
 }
+DEFAULT_COLOR = "#ffffff"
 PROBABILITY = [0.35, 0.4, 0.05, 0.05, 0.05, 0.05, 0.05]
 PATTERN_TYPES = ["void", "grass", "stone", "hill", "jungle", "forest", "low_forest"]
 TYPES_TO_GROUP = ["void", "grass", "hill", "jungle", "forest"]
